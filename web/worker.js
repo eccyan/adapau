@@ -1,18 +1,13 @@
 // importScripts("https://unpkg.com/@rustwasm/wasm-bindgen");
 
 (async () => {
-  const { default: play_ogg_files } = await import("./pkg/adapau.js");
+  const { default: init, play_ogg_files } = await import("./pkg/adapau.js");
+
+  await init();
 
   self.addEventListener("message", async (event) => {
     const { audioFiles } = event.data;
-    const audioDataArray = await Promise.all(
-      audioFiles.map(async (url) => {
-        const response = await fetch(url);
-        const data = await response.arrayBuffer();
-        return data;
-      })
-    );
-    play_ogg_files(audioDataArray);
-    postMessage({ type: "done", buffer: buffer });
+    await play_ogg_files(audioFiles);
+    postMessage({ type: "play" });
   });
 })();

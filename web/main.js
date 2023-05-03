@@ -12,7 +12,10 @@ playButton.addEventListener("click", () => {
 
 worker.onmessage = (event) => {
   const { data } = event;
-  if (data.type === "done") {
+  if (data.type === "play") {
     console.log("done");
+    urlInput.setAttribute("disabled", "disabled");
+    playButton.setAttribute("disabled", "disabled");
+    playButton.document = "Playing...";
   }
 };
