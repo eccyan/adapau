@@ -1,10 +1,10 @@
 /* tslint:disable */
 /* eslint-disable */
 /**
-* @param {Array<any>} audio_files
+* @param {any} audio_file_urls
 * @returns {Promise<void>}
 */
-export function play_ogg_files(audio_files: Array<any>): Promise<void>;
+export function play_ogg_files(audio_file_urls: any): Promise<void>;
 
 export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembly.Module;
 
@@ -14,7 +14,7 @@ export interface InitOutput {
   readonly __wbindgen_malloc: (a: number) => number;
   readonly __wbindgen_realloc: (a: number, b: number, c: number) => number;
   readonly __wbindgen_export_2: WebAssembly.Table;
-  readonly _dyn_core__ops__function__FnMut__A____Output___R_as_wasm_bindgen__closure__WasmClosure___describe__invoke__h2420f036ed93f64e: (a: number, b: number, c: number) => void;
+  readonly _dyn_core__ops__function__FnMut__A____Output___R_as_wasm_bindgen__closure__WasmClosure___describe__invoke__h3643e0357cdafd10: (a: number, b: number, c: number) => void;
   readonly _dyn_core__ops__function__FnMut__A____Output___R_as_wasm_bindgen__closure__WasmClosure___describe__invoke__h1f793817200ec2bd: (a: number, b: number, c: number) => void;
   readonly __wbindgen_exn_store: (a: number) => void;
   readonly wasm_bindgen__convert__closures__invoke2_mut__h40bc4bd7f8dd7952: (a: number, b: number, c: number, d: number) => void;

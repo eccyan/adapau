@@ -1,10 +1,10 @@
-use js_sys::Array;
-use std::cell::{BorrowError, RefCell};
+use js_sys::{Array, JsString};
+use std::cell::RefCell;
 use std::rc::Rc;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::JsFuture;
-use web_sys::{AudioBuffer, AudioBufferSourceNode, AudioContext};
+use web_sys::{AudioBuffer, AudioContext, Response, Window};
 
 #[wasm_bindgen]
 extern "C" {
@@ -12,18 +12,33 @@ extern "C" {
     fn log(s: &str);
 }
 
+async fn fetch_and_decode(audio_context: &AudioContext, url: &str) -> Result<AudioBuffer, JsValue> {
+    let window = web_sys::window().expect("no global `window` exists");
+    let response: Response = JsFuture::from(window.fetch_with_str(url))
+        .await?
+        .dyn_into()?;
+    let array_buffer: js_sys::ArrayBuffer =
+        JsFuture::from(response.array_buffer()?).await?.dyn_into()?;
+    let audio_buffer: AudioBuffer = JsFuture::from(audio_context.decode_audio_data(&array_buffer)?)
+        .await?
+        .dyn_into()?;
+    Ok(audio_buffer)
+}
+
 #[wasm_bindgen]
-pub async fn play_ogg_files(audio_files: Array) -> Result<(), JsValue> {
+pub async fn play_ogg_files(audio_file_urls: JsValue) -> Result<(), JsValue> {
+    let audio_file_urls: Array = audio_file_urls.into();
+    log(&format!("Play {} files", audio_file_urls.length()));
+
     let audio_context = AudioContext::new()?;
     let audio_context_rc = Rc::new(RefCell::new(audio_context));
     let base_time = audio_context_rc.borrow().current_time() + 1.0;
 
-    for (index, file) in audio_files.iter().enumerate() {
-        let array_buffer = file.dyn_into::<js_sys::ArrayBuffer>()?;
+    for (index, url) in audio_file_urls.iter().enumerate() {
+        let url = url.dyn_into::<JsString>()?.as_string().unwrap();
         let schedule_time = base_time + index as f64 * 0.5;
 
         let audio_context_clone = audio_context_rc.clone();
-
         let closure = Closure::wrap(Box::new(move |buffer: AudioBuffer| {
             let audio_context = match audio_context_clone.try_borrow() {
                 Ok(audio_context) => audio_context,
@@ -46,19 +61,9 @@ pub async fn play_ogg_files(audio_files: Array) -> Result<(), JsValue> {
             ));
         }) as Box<dyn FnMut(_)>);
 
-        let onload = closure.as_ref().unchecked_ref();
-
-        match audio_context_rc.try_borrow() {
-            Ok(audio_context) => {
-                let promise =
-                    audio_context.decode_audio_data_with_success_callback(&array_buffer, onload)?;
-                let _ = JsFuture::from(promise).await?;
-            }
-            Err(_err) => {
-                log("Error: Could not borrow the AudioContext");
-                return Err(JsValue::from_str("Could not borrow the AudioContext"));
-            }
-        }
+        let buffer = fetch_and_decode(&audio_context_rc.borrow(), &url).await?;
+        let func: &js_sys::Function = closure.as_ref().unchecked_ref();
+        func.call1(&JsValue::NULL, &buffer)?;
         closure.forget();
     }
 
